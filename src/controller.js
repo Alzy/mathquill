@@ -7,6 +7,13 @@
  ********************************************/
 
 var Controller = P(function(_) {
+  _.activeUndo = false;
+  _.undoTimer = false;
+  _.undoHash = false;
+  var maxActions = 10; // Set size of undo stack
+  var undoArray = [];
+  var redoArray = [];
+
   _.init = function(root, container, options) {
     this.id = root.id;
     this.data = {};
@@ -38,4 +45,105 @@ var Controller = P(function(_) {
     }
     return this;
   };
+
+  // Schedule function works to avoid setting an undo for every letter of keypress
+  // Called on every keypress BEFORE change is made to mathquill, records current state
+  // and will wait 1000ms to record it into the undo stack.  Any more keypresses in that
+  // timeframe will simply delay the record time another 1000ms.
+  _.scheduleUndoPoint = function(el) {
+    // If this was called by something being altered by an undo action, we ignore it...we already know
+    if(this.activeUndo) return; 
+    // Check for active undotimer
+    if(this.undoTimer) 
+      window.clearTimeout(this.undoTimer);
+    else 
+      this.undoHash = this.currentState();
+    this.undoTimer = window.setTimeout(function(_this) { 
+      return function() { 
+        _this.undoTimer = false;
+        _this.setUndoPoint(_this.undoHash);
+        _this.undoHash = false;
+      }; 
+    }(this), 1000);
+  }
+
+  // Register the current or provided status in to the undo manager
+  // Called on a delay by scheduleUndoPoint, or call immediately for 'big' 
+  // undo events (like paste, cut, etc) BEFORE the mathquill object is changed.
+  _.setUndoPoint = function(hash) {
+    // Was this called by something being altered by an undo/redo action?
+    if(this.activeUndo) return; 
+    // Was I called directly while a scheduled undo is waiting? 
+    if(this.undoTimer) {
+      window.clearTimeout(this.undoTimer);
+      this.undoTimer = false;
+      if(typeof hash === 'undefined') 
+        hash = this.undoHash; 
+      else 
+        this.setUndoPoint(this.undoHash);
+      this.undoHash = false;
+    } 
+    if(typeof hash === 'undefined') hash = this.currentState();
+    undoArray.push(hash);
+    console.log(undoArray);
+    if(undoArray.length > maxActions) 
+      undoArray.shift();
+    while(redoArray.length) // Clear redo manager after a new undo point is set
+      redoArray.pop();
+  }
+
+  // record the current state
+  _.currentState = function() {
+    return {
+        latex: this.API.latex(),
+        cursor: this.cursor.getAbsolutePosition()
+    };
+  }
+  // Restore to provided state
+  _.restoreState = function(data) {
+    this.API.select();
+    this.cursor.deleteSelection();
+    this.API.moveToLeftEnd();
+    // this.writeLatex(data.latex.slice(6, -1));
+    this.writeLatex(data.latex);
+    this.cursor.setPosition(data.cursor);
+  }
+
+
+  // Attach these methods to the ctrl-z and ctrl-y actions, and any software buttons (from a pulldown menu for example)
+  _.restoreUndoPoint = function() {
+    if(this.undoTimer) { // Something is scheduled...add it in now
+      this.undoTimer = false;
+      this.setUndoPoint(this.undoHash);
+      this.undoHash = false;
+    }
+    this.undoRedo(true);
+  }
+  _.restoreRedoPoint = function() {
+    this.undoRedo(false);
+  }
+
+  //Perform the undo/redo action.  It restores to the last item in the undo/redo stack,
+  // and then adds this action to the other stack so it can be undone/redone
+  _.undoRedo = function(undo) {
+    if(undo && (undoArray.length == 0)) return;
+    if(!undo && (redoArray.length == 0)) return;
+    this.activeUndo = true;
+    var action = undo ? undoArray.pop() : redoArray.pop();
+    var reverseAction = this.currentState();  // Reverse action is used to populate redo when this action completes
+    this.restoreState(action);
+    // Add the reverse action to the undo/redo array
+    if(undo) {
+      redoArray.push(reverseAction);
+      if(redoArray.length > maxActions) 
+        redoArray.shift();
+    } else {
+      undoArray.push(reverseAction);
+      if(undoArray.length > maxActions) 
+        undoArray.shift();
+    }
+    this.activeUndo = false;
+    // delete action;
+    action = null;
+  }
 });

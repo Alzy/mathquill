@@ -13,6 +13,7 @@ JS environment could actually contain many instances. */
 var Cursor = P(Point, function(_) {
   _.init = function(initParent, options) {
     this.parent = initParent;
+    this.controller = initParent.controller;
     this.options = options;
 
     var jQ = this.jQ = this._jQ = $('<span class="mq-cursor">&#8203;</span>');
@@ -259,6 +260,77 @@ var Cursor = P(Point, function(_) {
     }
     return seln;
   };
+
+  _.getAbsolutePosition = function() {
+    // Returns the absolute cursor position, based on the relationship to root.  This can be used to 
+    // re-establish the correct cursor and anticursor locations at a later date for an element
+    // with the same latex structure but different elements...aka after a paste event of identical latex that
+    // rebuilds the element tree with identical, but different, instances
+    if(!this.anticursor) return {};
+    var getLocation = function(item, root) {
+      var out = [];
+      if(item[L]) {
+        out.push('insRightOf');
+        var el = item[L];
+      } else if(item[R]) {
+        out.push('insLeftOf')
+        var el = item[R];
+      } else {
+        out.push('insAtLeftEnd')
+        var el = item.parent;
+      }
+      while(el != root) {
+        if(el[L]) {
+          out.push('L');
+          el = el[L]
+        } else {
+          out.push('endsL')
+          el = el.parent;
+        }
+      }
+      return out.reverse();
+    }
+    if(this.anticursor)
+      return { cursor: getLocation(this, this.controller.root), anticursor: getLocation(this.anticursor, this.controller.root) }
+    else
+      return { cursor: getLocation(this, this.controller.root) }
+  }
+
+  // Takes output from getAbsolutePosition, restores cursor to this point.  Really hope the structure matches...we dont check to make sure!
+  _.setPosition = function(position) {
+    if(position.anticursor) {
+      var el = this.controller.root;
+      for(var i = 0; i < position.anticursor.length; i++) {
+        switch(position.anticursor[i]) {
+          case 'L':
+            el = el[R];
+            break;
+          case 'endsL':
+            el = el.ends[L];
+            break;
+          default:
+            this[position.anticursor[i]](el);
+        }
+      }
+      this.startSelection();
+    }
+    if(position.cursor) {
+      var el = this.controller.root;
+      for(var i = 0; i < position.cursor.length; i++) {
+        switch(position.cursor[i]) {
+          case 'L':
+            el = el[R];
+            break;
+          case 'endsL':
+            el = el.ends[L];
+            break;
+          default:
+            this[position.cursor[i]](el);
+        }
+      }
+      if(position.anticursor) this.select();
+    }
+  }
 });
 
 var Selection = P(Fragment, function(_, super_) {

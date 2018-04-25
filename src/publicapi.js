@@ -111,6 +111,7 @@ function getInterface(v) {
       var contents = el.addClass(classNames).contents().detach();
       root.jQ =
         $('<span class="mq-root-block"/>').attr(mqBlockId, root.id).appendTo(el);
+      ctrlr.API = MQ(root.jQ.get(0).parentElement);
       this.latex(contents.text());
 
       this.revert = function() {

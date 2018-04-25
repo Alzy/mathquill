@@ -11,8 +11,6 @@ var Controller = P(function(_) {
   _.undoTimer = false;
   _.undoHash = false;
   var maxActions = 10; // Set size of undo stack
-  var undoArray = [];
-  var redoArray = [];
 
   _.init = function(root, container, options) {
     this.id = root.id;
@@ -26,6 +24,9 @@ var Controller = P(function(_) {
 
     this.cursor = root.cursor = Cursor(root, options);
     // TODO: stop depending on root.cursor, and rm it
+
+    this.undoArray = [];
+    this.redoArray = [];
   };
 
   _.handle = function(name, dir) {
@@ -84,12 +85,12 @@ var Controller = P(function(_) {
       this.undoHash = false;
     } 
     if(typeof hash === 'undefined') hash = this.currentState();
-    undoArray.push(hash);
-    console.log(undoArray);
-    if(undoArray.length > maxActions) 
-      undoArray.shift();
-    while(redoArray.length) // Clear redo manager after a new undo point is set
-      redoArray.pop();
+    this.undoArray.push(hash);
+    console.log(this.undoArray);
+    if(this.undoArray.length > maxActions) 
+      this.undoArray.shift();
+    while(this.redoArray.length) // Clear redo manager after a new undo point is set
+      this.redoArray.pop();
   }
 
   // record the current state
@@ -126,21 +127,21 @@ var Controller = P(function(_) {
   //Perform the undo/redo action.  It restores to the last item in the undo/redo stack,
   // and then adds this action to the other stack so it can be undone/redone
   _.undoRedo = function(undo) {
-    if(undo && (undoArray.length == 0)) return;
-    if(!undo && (redoArray.length == 0)) return;
+    if(undo && (this.undoArray.length == 0)) return;
+    if(!undo && (this.redoArray.length == 0)) return;
     this.activeUndo = true;
-    var action = undo ? undoArray.pop() : redoArray.pop();
+    var action = undo ? this.undoArray.pop() : this.redoArray.pop();
     var reverseAction = this.currentState();  // Reverse action is used to populate redo when this action completes
     this.restoreState(action);
     // Add the reverse action to the undo/redo array
     if(undo) {
-      redoArray.push(reverseAction);
-      if(redoArray.length > maxActions) 
-        redoArray.shift();
+      this.redoArray.push(reverseAction);
+      if(this.redoArray.length > maxActions) 
+        this.redoArray.shift();
     } else {
-      undoArray.push(reverseAction);
-      if(undoArray.length > maxActions) 
-        undoArray.shift();
+      this.undoArray.push(reverseAction);
+      if(this.undoArray.length > maxActions) 
+        this.undoArray.shift();
     }
     this.activeUndo = false;
     // delete action;

@@ -412,6 +412,7 @@ var MathBlock = P(MathElement, function(_, super_) {
       return VanillaSymbol(ch);
   };
   _.write = function(cursor, ch) {
+    cursor.controller.scheduleUndoPoint();
     var cmd = this.chToCmd(ch, cursor.options);
     if (cursor.selection) cmd.replaces(cursor.replaceSelection());
     cmd.createLeftOf(cursor.show());

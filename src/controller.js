@@ -73,7 +73,7 @@ var Controller = P(function(_) {
   // undo events (like paste, cut, etc) BEFORE the mathquill object is changed.
   _.setUndoPoint = function(hash) {
     // Was this called by something being altered by an undo/redo action?
-    if(this.activeUndo) return; 
+    if(this.activeUndo) return;
     // Was I called directly while a scheduled undo is waiting? 
     if(this.undoTimer) {
       window.clearTimeout(this.undoTimer);
@@ -93,6 +93,15 @@ var Controller = P(function(_) {
       this.redoArray.pop();
   }
 
+  // erase undo and redo stacks and reset all related variables.
+  _.clearUndoRedoStack = function() {
+    this.undoArray.length = 0;
+    this.redoArray.length = 0;
+    this.activeUndo = false;
+    this.undoTimer = false;
+    this.undoHash = false;
+  }
+
   // record the current state
   _.currentState = function() {
     return {
@@ -107,7 +116,7 @@ var Controller = P(function(_) {
     this.API.moveToLeftEnd();
     // this.writeLatex(data.latex.slice(6, -1));
     this.writeLatex(data.latex);
-    this.cursor.setPosition(data.cursor);
+    // this.cursor.setPosition(data.cursor);
   }
 
 

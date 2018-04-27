@@ -224,6 +224,7 @@ Controller.open(function(_) {
   _.deleteDir = function(dir) {
     prayDirection(dir);
     var cursor = this.cursor;
+    cursor.controller.scheduleUndoPoint();
 
     var hadSelection = cursor.selection;
     this.notify('edit'); // deletes selection if present

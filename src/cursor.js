@@ -296,40 +296,9 @@ var Cursor = P(Point, function(_) {
       return { cursor: getLocation(this, this.controller.root) }
   }
 
-  // Takes output from getAbsolutePosition, restores cursor to this point.  Really hope the structure matches...we dont check to make sure!
+  // Takes output from getAbsolutePosition, restores cursor to this point.
   _.setPosition = function(position) {
-    if(position.anticursor) {
-      var el = this.controller.root;
-      for(var i = 0; i < position.anticursor.length; i++) {
-        switch(position.anticursor[i]) {
-          case 'L':
-            el = el[R];
-            break;
-          case 'endsL':
-            el = el.ends[L];
-            break;
-          default:
-            this[position.anticursor[i]](el);
-        }
-      }
-      this.startSelection();
-    }
-    if(position.cursor) {
-      var el = this.controller.root;
-      for(var i = 0; i < position.cursor.length; i++) {
-        switch(position.cursor[i]) {
-          case 'L':
-            el = el[R];
-            break;
-          case 'endsL':
-            el = el.ends[L];
-            break;
-          default:
-            this[position.cursor[i]](el);
-        }
-      }
-      if(position.anticursor) this.select();
-    }
+    this.controller.seek(position.target, position.pageX, position.pageY);
   }
 });
 

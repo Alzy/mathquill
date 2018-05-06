@@ -10,7 +10,7 @@ var Controller = P(function(_) {
   _.activeUndo = false;
   _.undoTimer = false;
   _.undoHash = false;
-  var maxActions = 10; // Set size of undo stack
+  var maxActions = 50; // Set size of undo stack
 
   _.init = function(root, container, options) {
     this.id = root.id;
@@ -91,6 +91,7 @@ var Controller = P(function(_) {
       this.undoArray.shift();
     while(this.redoArray.length) // Clear redo manager after a new undo point is set
       this.redoArray.pop();
+    this.handle('onUndoPointSet');
   }
 
   // erase undo and redo stacks and reset all related variables.
@@ -104,9 +105,14 @@ var Controller = P(function(_) {
 
   // record the current state
   _.currentState = function() {
+    console.log('cursor', this.cursor.root);
     return {
         latex: this.API.latex(),
-        cursor: this.cursor.getAbsolutePosition()
+        cursor: {
+          'target': this.cursor.root,
+          'pageX': this.cursor._jQ.offset().left,
+          'pageY': this.cursor._jQ.offset().top
+        }
     };
   }
   // Restore to provided state
@@ -116,7 +122,7 @@ var Controller = P(function(_) {
     this.API.moveToLeftEnd();
     // this.writeLatex(data.latex.slice(6, -1));
     this.writeLatex(data.latex);
-    // this.cursor.setPosition(data.cursor);
+    this.cursor.setPosition(data.cursor);
   }
 
 
@@ -155,5 +161,11 @@ var Controller = P(function(_) {
     this.activeUndo = false;
     // delete action;
     action = null;
+    // handle this event
+    if(undo){
+      this.handle('onUndo');
+    } else {
+      this.handle('onRedo');
+    }
   }
 });

@@ -85,6 +85,7 @@ Controller.open(function(_) {
   _.cut = function() {
     var ctrlr = this, cursor = ctrlr.cursor;
     if (cursor.selection) {
+      ctrlr.setUndoPoint();
       setTimeout(function() {
         ctrlr.notify('edit'); // deletes selection if present
         cursor.parent.bubble('reflow');
@@ -108,6 +109,7 @@ Controller.open(function(_) {
         text = '\\text{'+text+'}';
       }
     }
+    this.setUndoPoint();
     // FIXME: this always inserts math or a TextBlock, even in a RootTextBlock
     this.writeLatex(text).cursor.show();
   };

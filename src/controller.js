@@ -10,7 +10,7 @@ var Controller = P(function(_) {
   _.activeUndo = false;
   _.undoTimer = false;
   _.undoHash = false;
-  var maxActions = 50; // Set size of undo stack
+  var maxActions = 250; // Set size of undo stack
 
   _.init = function(root, container, options) {
     this.id = root.id;
@@ -49,8 +49,8 @@ var Controller = P(function(_) {
 
   // Schedule function works to avoid setting an undo for every letter of keypress
   // Called on every keypress BEFORE change is made to mathquill, records current state
-  // and will wait 1000ms to record it into the undo stack.  Any more keypresses in that
-  // timeframe will simply delay the record time another 1000ms.
+  // and will wait 250ms to record it into the undo stack.  Any more keypresses in that
+  // timeframe will simply delay the record time another 250ms.
   _.scheduleUndoPoint = function(el) {
     // If this was called by something being altered by an undo action, we ignore it...we already know
     if(this.activeUndo) return; 
@@ -65,7 +65,7 @@ var Controller = P(function(_) {
         _this.setUndoPoint(_this.undoHash);
         _this.undoHash = false;
       }; 
-    }(this), 1000);
+    }(this), 250);
   }
 
   // Register the current or provided status in to the undo manager
@@ -86,7 +86,6 @@ var Controller = P(function(_) {
     } 
     if(typeof hash === 'undefined') hash = this.currentState();
     this.undoArray.push(hash);
-    console.log(this.undoArray);
     if(this.undoArray.length > maxActions) 
       this.undoArray.shift();
     while(this.redoArray.length) // Clear redo manager after a new undo point is set
@@ -105,7 +104,6 @@ var Controller = P(function(_) {
 
   // record the current state
   _.currentState = function() {
-    console.log('cursor', this.cursor.root);
     return {
         latex: this.API.latex(),
         cursor: {

@@ -73,8 +73,6 @@ Controller.open(function(_) {
       }
     }
     var node = nodeId ? Node.byId[nodeId] : this.root;
-    console.log(':', target, pageX, pageY);
-    console.log('node:', node);
     pray('nodeId is the id of some Node that exists', node);
 
     // don't clear selection until after getting node from target, in case
